@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pattern Recall | Memory Game</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --navy: #183858;
+            --teal: #2A7F6E;
+            --gold: #D4A373;
+            --light-gray: #F4F4F4;
+            --white: #FFFFFF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: var(--light-gray);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background-color: var(--navy) !important;
+            padding: 0.7rem 0;
+            flex-shrink: 0;
+        }
+        
+        .navbar-brand, .nav-link {
+            color: white !important;
+        }
+        
+        .navbar-brand {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .nav-link:hover {
+            color: var(--gold) !important;
+        }
+        
+        .game-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--light-gray) 0%, #e8e8e8 100%);
+            min-height: 0;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .game-card {
+            background-color: white;
+            border-radius: 20px;
+            padding: 25px 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .setup-screen {
+            text-align: center;
+        }
+        
+        .setup-screen h2 {
+            color: var(--navy);
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+        
+        .setup-screen .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+        
+        .option-group {
+            margin-bottom: 15px;
+        }
+        
+        .option-group label {
+            font-weight: bold;
+            color: var(--navy);
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .btn-option {
+            background-color: var(--light-gray);
+            border: 2px solid #ddd;
+            color: #333;
+            padding: 8px 20px;
+            border-radius: 30px;
+            margin: 0 6px 6px 0;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-option:hover {
+            border-color: var(--teal);
+            background-color: #e8f4f2;
+        }
+        
+        .btn-option.active {
+            border-color: var(--navy);
+            background-color: var(--navy);
+            color: white;
+        }
+        
+        .btn-start {
+            background-color: var(--gold);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        
+        .btn-start:hover {
+            background-color: var(--navy);
+            transform: scale(1.05);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background-color: var(--light-gray);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 5px;
+            font-size: 0.85rem;
+        }
+        
+        .game-info .stat {
+            font-weight: bold;
+            color: var(--navy);
+        }
+        
+        .game-info .stat span {
+            color: var(--teal);
+        }
+        
+        .grid {
+            display: grid;
+            gap: 8px;
+            justify-content: center;
+            margin: 10px auto;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-5 { grid-template-columns: repeat(5, 1fr); }
+        
+        .tile {
+            aspect-ratio: 1 / 1;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 3px solid transparent;
+            background-color: #d0d0d0;
+            position: relative;
+            min-height: 40px;
+        }
+        
+        .tile:hover:not(.disabled) {
+            transform: scale(1.03);
+            border-color: var(--gold);
+        }
+        
+        .tile.lit {
+            box-shadow: 0 0 20px rgba(42, 127, 110, 0.6);
+            transform: scale(1.02);
+        }
+        
+        .tile.correct {
+            border-color: var(--teal);
+            box-shadow: 0 0 15px rgba(42, 127, 110, 0.4);
+        }
+        
+        .tile.wrong {
+            border-color: #c0392b;
+            box-shadow: 0 0 15px rgba(192, 57, 43, 0.5);
+            background-color: #e74c3c !important;
+        }
+        
+        .tile.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .feedback-message {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            min-height: 28px;
+            font-size: 0.95rem;
+        }
+        
+        .feedback-message.correct {
+            color: var(--teal);
+        }
+        
+        .feedback-message.wrong {
+            color: #c0392b;
+        }
+        
+        .feedback-message.watching {
+            color: var(--navy);
+        }
+        
+        .feedback-message.your-turn {
+            color: #666;
+        }
+        
+        .score-display {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--gold);
+            margin: 10px 0;
+        }
+        
+        .btn-play-again {
+            background-color: var(--teal);
+            color: white;
+            border: none;
+            padding: 10px 35px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .btn-play-again:hover {
+            background-color: var(--navy);
+            transform: scale(1.05);
+        }
+        
+        footer {
+            background-color: var(--navy);
+            color: white;
+            padding: 12px 0;
+            text-align: center;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+        }
+        
+        footer a {
+            color: var(--gold);
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            color: white;
+        }
+        
+        footer p {
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .game-card {
+                padding: 18px 15px;
+            }
+            
+            .setup-screen h2 {
+                font-size: 1.5rem;
+            }
+            
+            .btn-option {
+                padding: 6px 14px;
+                font-size: 0.8rem;
+                margin: 0 4px 4px 0;
+            }
+            
+            .btn-start {
+                padding: 10px 30px;
+                font-size: 1rem;
+            }
+            
+            .game-info {
+                font-size: 0.75rem;
+                padding: 8px 12px;
+            }
+            
+            .grid {
+                gap: 6px;
+                max-width: 400px;
+            }
+            
+            .tile {
+                border-radius: 8px;
+                min-height: 35px;
+                border-width: 2px;
+            }
+            
+            .feedback-message {
+                font-size: 0.85rem;
+                min-height: 24px;
+            }
+            
+            .score-display {
+                font-size: 1.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .game-wrapper {
+                padding: 10px;
+            }
+            
+            .game-card {
+                padding: 12px 10px;
+                border-radius: 14px;
+            }
+            
+            .setup-screen h2 {
+                font-size: 1.2rem;
+            }
+            
+            .setup-screen .subtitle {
+                font-size: 0.8rem;
+                margin-bottom: 12px;
+            }
+            
+            .btn-option {
+                padding: 5px 10px;
+                font-size: 0.7rem;
+                margin: 0 3px 3px 0;
+            }
+            
+            .option-group {
+                margin-bottom: 10px;
+            }
+            
+            .option-group label {
+                font-size: 0.8rem;
+                margin-bottom: 5px;
+            }
+            
+            .btn-start {
+                padding: 8px 20px;
+                font-size: 0.9rem;
+            }
+            
+            .game-info {
+                font-size: 0.65rem;
+                padding: 6px 10px;
+                gap: 3px;
+            }
+            
+            .grid {
+                gap: 4px;
+                max-width: 300px;
+            }
+            
+            .tile {
+                border-radius: 6px;
+                min-height: 28px;
+                border-width: 2px;
+            }
+            
+            .feedback-message {
+                font-size: 0.75rem;
+                min-height: 20px;
+            }
+            
+            .score-display {
+                font-size: 1.5rem;
+            }
+            
+            .btn-play-again {
+                padding: 8px 25px;
+                font-size: 0.85rem;
+            }
+            
+            footer {
+                font-size: 0.7rem;
+                padding: 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#">Pattern Recall</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon" style="background-color: white;"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto"></ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="game-wrapper">
+        <div class="game-container" id="game">
+            <div class="game-card" id="game-root">
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>Designed by Mathis Ait Hammou | SEG3125 - University of Ottawa | <a href="../index.html">← Portfolio</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const COLORS = ['#E74C3C', '#3498DB', '#2ECC71', '#F1C40F', '#9B59B6', '#1ABC9C', '#E67E22', '#E84393'];
+
+        let state = {
+            gameState: 'setup',
+            gridSize: 4,
+            pattern: [],
+            playerSequence: [],
+            isShowingPattern: false,
+            round: 0,
+            maxPatternLength: 0,
+            litTile: null,
+            feedback: null,
+            isProcessing: false
+        };
+
+        let timeoutId = null;
+        let tileColors = [];
+
+        const root = document.getElementById('game-root');
+
+        function getGridClass(size) {
+            if (size === 3) return 'grid-3';
+            if (size === 4) return 'grid-4';
+            if (size === 5) return 'grid-5';
+            return 'grid-4';
+        }
+
+        function getTileColors() {
+            const total = state.gridSize * state.gridSize;
+            const colors = [];
+            for (let i = 0; i < total; i++) {
+                colors.push(COLORS[i % COLORS.length]);
+            }
+            return colors;
+        }
+
+        function render() {
+            if (state.gameState === 'setup') {
+                renderSetup();
+            } else if (state.gameState === 'gameover') {
+                renderGameOver();
+            } else {
+                renderPlaying();
+            }
+        }
+
+        function renderSetup() {
+            let html = `
+                <div class="setup-screen">
+                    <h2>Pattern Recall</h2>
+                    <p class="subtitle">Watch the pattern and repeat it from memory</p>
+
+                    <div class="option-group">
+                        <label>Grid Size (Difficulty)</label>
+                        <div>
+                            <button class="btn-option ${state.gridSize === 3 ? 'active' : ''}" data-grid="3">Easy (3×3)</button>
+                            <button class="btn-option ${state.gridSize === 4 ? 'active' : ''}" data-grid="4">Medium (4×4)</button>
+                            <button class="btn-option ${state.gridSize === 5 ? 'active' : ''}" data-grid="5">Hard (5×5)</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-start" id="startBtn">Start Game →</button>
+                </div>
+            `;
+            
+            root.innerHTML = html;
+            
+            document.querySelectorAll('[data-grid]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.gridSize = parseInt(btn.dataset.grid);
+                    render();
+                });
+            });
+            
+            document.getElementById('startBtn').addEventListener('click', startGame);
+        }
+
+        function renderGameOver() {
+            root.innerHTML = `
+                <div class="text-center">
+                    <h2 style="color: #c0392b;">💔 Game Over</h2>
+                    <p style="font-size: 1.1rem; margin-top: 10px;">You remembered:</p>
+                    <div class="score-display">${state.maxPatternLength} patterns</div>
+                    <p>in ${state.round} rounds</p>
+                    <button class="btn-play-again" id="playAgainBtn">Play Again →</button>
+                </div>
+            `;
+            
+            document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+        }
+
+        function renderPlaying() {
+            const totalTiles = state.gridSize * state.gridSize;
+            tileColors = getTileColors();
+            
+            let feedbackText = '';
+            let feedbackClass = '';
+            
+            if (state.feedback === 'correct') {
+                feedbackText = '✅ Correct!';
+                feedbackClass = 'correct';
+            } else if (state.feedback === 'wrong') {
+                feedbackText = '❌ Wrong! Game over...';
+                feedbackClass = 'wrong';
+            } else if (state.isShowingPattern) {
+                feedbackText = '👀 Watch the pattern...';
+                feedbackClass = 'watching';
+            } else if (!state.isShowingPattern && !state.isProcessing && state.gameState === 'playing' && state.feedback !== 'wrong') {
+                feedbackText = '🎯 Your turn — repeat the pattern!';
+                feedbackClass = 'your-turn';
+            }
+            
+            let html = `
+                <div class="game-info">
+                    <div class="stat">Round: <span>${state.round}</span></div>
+                    <div class="stat">Pattern Length: <span>${state.pattern.length}</span></div>
+                    <div class="stat">Progress: <span>${state.playerSequence.length}/${state.pattern.length}</span></div>
+                    <div class="stat">Best: <span>${state.maxPatternLength}</span></div>
+                </div>
+                
+                <div class="feedback-message ${feedbackClass}">${feedbackText}</div>
+                
+                <div class="grid ${getGridClass(state.gridSize)}">
+            `;
+            
+            for (let i = 0; i < totalTiles; i++) {
+                const isLit = state.litTile === i;
+                const color = tileColors[i % tileColors.length];
+                const isDisabled = state.isShowingPattern || state.isProcessing || state.feedback === 'wrong' || state.gameState === 'gameover';
+                
+                let className = 'tile';
+                if (isLit) className += ' lit';
+                if (state.feedback === 'correct' && state.litTile === i) className += ' correct';
+                if (state.feedback === 'wrong' && state.litTile === i) className += ' wrong';
+                if (isDisabled) className += ' disabled';
+                
+                const bgColor = isLit ? color : '#d0d0d0';
+                const opacity = isLit ? 1 : 0.7;
+                
+                html += `<div class="${className}" data-index="${i}" style="background-color: ${bgColor}; opacity: ${opacity};"></div>`;
+            }
+            
+            html += `
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn btn-outline-secondary" id="quitBtn" style="border-radius: 25px; padding: 6px 20px; font-size: 0.85rem;">🚪 Quit Game</button>
+                </div>
+            `;
+            
+            root.innerHTML = html;
+            
+            document.querySelectorAll('.tile:not(.disabled)').forEach(tile => {
+                tile.addEventListener('click', () => {
+                    const index = parseInt(tile.dataset.index);
+                    handleTileClick(index);
+                });
+            });
+            
+            document.getElementById('quitBtn').addEventListener('click', resetGame);
+        }
+
+        function startGame() {
+            state.gameState = 'playing';
+            state.round = 0;
+            state.maxPatternLength = 0;
+            state.pattern = [];
+            state.playerSequence = [];
+            state.litTile = null;
+            state.feedback = null;
+            state.isProcessing = false;
+            
+            render();
+            
+            setTimeout(() => {
+                startRound([]);
+            }, 300);
+        }
+
+        function startRound(currentPattern) {
+            const totalTiles = state.gridSize * state.gridSize;
+            const newTile = Math.floor(Math.random() * totalTiles);
+            const newPattern = [...currentPattern, newTile];
+            state.pattern = newPattern;
+            state.playerSequence = [];
+            state.isShowingPattern = true;
+            state.feedback = null;
+            state.litTile = null;
+            state.isProcessing = false;
+            
+            render();
+            showPattern(newPattern);
+        }
+
+        function showPattern(patternToShow) {
+            let index = 0;
+            
+            function showNext() {
+                if (index >= patternToShow.length) {
+                    state.isShowingPattern = false;
+                    state.litTile = null;
+                    state.isProcessing = false;
+                    render();
+                    return;
+                }
+                
+                const tileIndex = patternToShow[index];
+                state.litTile = tileIndex;
+                render();
+                
+                timeoutId = setTimeout(() => {
+                    state.litTile = null;
+                    render();
+                    index++;
+                    timeoutId = setTimeout(showNext, 300);
+                }, 400);
+            }
+            
+            timeoutId = setTimeout(showNext, 300);
+        }
+
+        function handleTileClick(index) {
+            if (state.isShowingPattern || state.isProcessing || state.gameState === 'gameover') return;
+            if (state.feedback === 'wrong') return;
+            
+            const newPlayerSequence = [...state.playerSequence, index];
+            state.playerSequence = newPlayerSequence;
+            
+            const expectedIndex = state.pattern[newPlayerSequence.length - 1];
+            
+            if (index === expectedIndex) {
+                state.feedback = 'correct';
+                state.litTile = index;
+                render();
+                
+                timeoutId = setTimeout(() => {
+                    state.litTile = null;
+                    state.feedback = null;
+                    render();
+                }, 300);
+                
+                if (newPlayerSequence.length === state.pattern.length) {
+                    state.isProcessing = true;
+                    const newRound = state.round + 1;
+                    state.round = newRound;
+                    if (newRound > state.maxPatternLength) {
+                        state.maxPatternLength = newRound;
+                    }
+                    
+                    timeoutId = setTimeout(() => {
+                        startRound(state.pattern);
+                    }, 600);
+                }
+            } else {
+                state.feedback = 'wrong';
+                state.litTile = index;
+                state.isProcessing = true;
+                render();
+                
+                timeoutId = setTimeout(() => {
+                    state.gameState = 'gameover';
+                    state.litTile = null;
+                    state.isProcessing = false;
+                    render();
+                }, 800);
+            }
+        }
+
+        function resetGame() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            state.gameState = 'setup';
+            state.pattern = [];
+            state.playerSequence = [];
+            state.litTile = null;
+            state.feedback = null;
+            state.isShowingPattern = false;
+            state.isProcessing = false;
+            state.round = 0;
+            state.maxPatternLength = 0;
+            render();
+        }
+
+        render();
+    </script>
+</body>
+</html>
