@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Food Price Dashboard | NewTech Analytics</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; color: #1A1A2E; }
+
+        .navbar-custom {
+            background-color: #2D1B69 !important;
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 20px rgba(45, 27, 105, 0.25);
+        }
+        .navbar-custom .navbar-brand {
+            font-weight: 800;
+            font-size: 1.6rem;
+            color: white !important;
+        }
+        .navbar-custom .navbar-brand span { color: #4A90D9; }
+        .navbar-custom .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        .navbar-custom .nav-link:hover { color: #00C9A7 !important; }
+
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        .dashboard-header {
+            background: linear-gradient(90deg, #2D1B69 0%, #4A90D9 100%);
+            color: white;
+            padding: 30px 35px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+        }
+        .dashboard-header h1 { font-weight: 800; font-size: 2rem; margin-bottom: 5px; }
+        .dashboard-header p { opacity: 0.85; margin-bottom: 0; font-size: 0.95rem; }
+        .dashboard-header .data-badge {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .lang-toggle { display: flex; gap: 8px; align-items: center; }
+        .lang-toggle button {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid transparent;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .lang-toggle button:hover { background: rgba(255, 255, 255, 0.25); }
+        .lang-toggle button.active {
+            background: white;
+            color: #2D1B69;
+            border-color: white;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            margin-bottom: 25px;
+        }
+        .chart-card .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .chart-card .chart-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #2D1B69;
+            margin-bottom: 2px;
+        }
+        .chart-card .chart-subtitle {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        .chart-card .chart-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .chart-card .chart-controls select {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 2px solid #e8e8e8;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .chart-card .chart-controls select:focus {
+            border-color: #4A90D9;
+            outline: none;
+        }
+
+        .chart-wrapper { position: relative; height: 300px; }
+
+        footer {
+            background: #2D1B69;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: 40px;
+        }
+        footer a { color: #00C9A7; text-decoration: none; }
+        footer a:hover { color: white; }
+
+        @media (max-width: 768px) {
+            .dashboard-header { padding: 20px; }
+            .dashboard-header h1 { font-size: 1.5rem; }
+            .chart-card { padding: 18px; }
+            .chart-wrapper { height: 220px; }
+            .lang-toggle button { font-size: 0.7rem; padding: 4px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#">Dash<span>Board</span> Analytics</a>
+        </div>
+    </nav>
+
+    <div class="main-container" id="root"></div>
+
+    <footer>
+        <div class="container">
+            <p style="margin:0;">Designed by Mathis Ait Hammou | SEG3125 - University of Ottawa</p>
+            <p style="margin: 5px 0 0; font-size:0.85rem;"><a href="../index.html">← Portfolio</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const FOOD_DATA = {
+            categories: ['Dairy', 'Meat', 'Produce', 'Grains'],
+
+            items: {
+                'Dairy': ['Milk (1L)', 'Cheese (500g)', 'Yogurt (750ml)', 'Butter (454g)'],
+                'Meat': ['Chicken (1kg)', 'Ground Beef (1kg)', 'Pork Chops (1kg)', 'Salmon (1kg)'],
+                'Produce': ['Tomatoes (1kg)', 'Potatoes (5kg)', 'Apples (1kg)', 'Bananas (1kg)'],
+                'Grains': ['Bread (loaf)', 'Rice (1kg)', 'Pasta (900g)', 'Flour (2.5kg)']
+            },
+
+            items_fr: {
+                'Dairy': ['Lait (1L)', 'Fromage (500g)', 'Yaourt (750ml)', 'Beurre (454g)'],
+                'Meat': ['Poulet (1kg)', 'Bœuf haché (1kg)', 'Côtelettes de porc (1kg)', 'Saumon (1kg)'],
+                'Produce': ['Tomates (1kg)', 'Pommes de terre (5kg)', 'Pommes (1kg)', 'Bananes (1kg)'],
+                'Grains': ['Pain (miche)', 'Riz (1kg)', 'Pâtes (900g)', 'Farine (2.5kg)']
+            },
+
+            prices_2024: {
+                'Milk (1L)': 4.95,
+                'Cheese (500g)': 7.49,
+                'Yogurt (750ml)': 3.99,
+                'Butter (454g)': 5.29,
+                'Chicken (1kg)': 12.99,
+                'Ground Beef (1kg)': 11.49,
+                'Pork Chops (1kg)': 9.99,
+                'Salmon (1kg)': 14.99,
+                'Tomatoes (1kg)': 4.49,
+                'Potatoes (5kg)': 6.99,
+                'Apples (1kg)': 3.99,
+                'Bananas (1kg)': 1.99,
+                'Bread (loaf)': 3.49,
+                'Rice (1kg)': 4.29,
+                'Pasta (900g)': 3.49,
+                'Flour (2.5kg)': 5.49
+            },
+
+            trends: {
+                'Milk (1L)': [4.29, 4.49, 4.69, 4.79, 4.95],
+                'Cheese (500g)': [6.49, 6.79, 6.99, 7.19, 7.49],
+                'Yogurt (750ml)': [3.29, 3.49, 3.69, 3.79, 3.99],
+                'Butter (454g)': [4.49, 4.69, 4.89, 5.09, 5.29],
+                'Chicken (1kg)': [10.99, 11.49, 11.99, 12.49, 12.99],
+                'Ground Beef (1kg)': [9.99, 10.49, 10.99, 11.29, 11.49],
+                'Pork Chops (1kg)': [8.49, 8.99, 9.49, 9.79, 9.99],
+                'Salmon (1kg)': [12.99, 13.49, 13.99, 14.49, 14.99],
+                'Tomatoes (1kg)': [3.49, 3.79, 3.99, 4.29, 4.49],
+                'Potatoes (5kg)': [5.49, 5.99, 6.29, 6.59, 6.99],
+                'Apples (1kg)': [3.29, 3.49, 3.69, 3.79, 3.99],
+                'Bananas (1kg)': [1.49, 1.59, 1.69, 1.79, 1.99],
+                'Bread (loaf)': [2.99, 3.09, 3.29, 3.39, 3.49],
+                'Rice (1kg)': [3.49, 3.79, 3.99, 4.19, 4.29],
+                'Pasta (900g)': [2.99, 3.19, 3.29, 3.39, 3.49],
+                'Flour (2.5kg)': [4.49, 4.69, 4.99, 5.19, 5.49]
+            },
+
+            years: ['2020', '2021', '2022', '2023', '2024']
+        };
+
+        const TRANSLATIONS = {
+            en: {
+                title: 'Food Price Dashboard',
+                subtitle: 'Tracking food prices across Canada (2020-2024)',
+                dataLabel: 'Synthetic data used',
+                barTitle: 'Average Food Prices by Item (2024)',
+                barSubtitle: 'Compare prices across different food items',
+                lineTitle: 'Price Trends Over Time (2020-2024)',
+                lineSubtitle: 'Track how prices have changed for all items in this category',
+                category: 'Category',
+                price: 'Price (CAD $)',
+                year: 'Year',
+                langEn: 'English',
+                langFr: 'Français',
+                noData: 'No data available for this category',
+                dairy: 'Dairy',
+                meat: 'Meat',
+                produce: 'Produce',
+                grains: 'Grains'
+            },
+            fr: {
+                title: 'Tableau de bord des prix alimentaires',
+                subtitle: 'Suivi des prix alimentaires au Canada (2020-2024)',
+                dataLabel: 'Données synthétiques utilisées',
+                barTitle: 'Prix moyens des aliments par article (2024)',
+                barSubtitle: 'Comparez les prix de différents produits alimentaires',
+                lineTitle: 'Évolution des prix dans le temps (2020-2024)',
+                lineSubtitle: 'Suivez l\'évolution des prix pour tous les articles de cette catégorie',
+                category: 'Catégorie',
+                price: 'Prix (CAD $)',
+                year: 'Année',
+                langEn: 'English',
+                langFr: 'Français',
+                noData: 'Aucune donnée disponible pour cette catégorie',
+                dairy: 'Produits laitiers',
+                meat: 'Viande',
+                produce: 'Produits frais',
+                grains: 'Céréales'
+            }
+        };
+
+        function App() {
+            const [language, setLanguage] = useState('en');
+            const [selectedCategory, setSelectedCategory] = useState('Dairy');
+
+            const chart1Instance = useRef(null);
+            const chart2Instance = useRef(null);
+
+            const t = TRANSLATIONS[language];
+
+            const getCategoryItems = (cat) => {
+                if (language === 'en') {
+                    return FOOD_DATA.items[cat] || [];
+                } else {
+                    return FOOD_DATA.items_fr[cat] || [];
+                }
+            };
+
+            const getEnglishName = (frName) => {
+                for (const cat of FOOD_DATA.categories) {
+                    const enItems = FOOD_DATA.items[cat];
+                    const frItems = FOOD_DATA.items_fr[cat];
+                    if (frItems && frItems.includes(frName)) {
+                        const index = frItems.indexOf(frName);
+                        return enItems[index] || frName;
+                    }
+                }
+                return frName;
+            };
+
+            const displayItems = getCategoryItems(selectedCategory);
+            const englishItems = displayItems.map(item => getEnglishName(item));
+
+            const barLabels = displayItems;
+            const barPrices = englishItems.map(item => FOOD_DATA.prices_2024[item] || 0);
+
+            const lineLabels = FOOD_DATA.years;
+            
+            const lineDatasets = englishItems.map((item, index) => {
+                const colors = ['#4A90D9', '#00C9A7', '#FF6B6B', '#F1C40F', '#9B59B6', '#1ABC9C', '#E67E22', '#E84393'];
+                const displayName = displayItems[index];
+                return {
+                    label: displayName,
+                    data: FOOD_DATA.trends[item] || [],
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length] + '33',
+                    fill: false,
+                    tension: 0.3,
+                    pointBackgroundColor: colors[index % colors.length],
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 1,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                };
+            });
+
+            const categoryOptions = FOOD_DATA.categories;
+
+            const getCategoryTranslation = (cat) => {
+                const map = {
+                    'Dairy': t.dairy,
+                    'Meat': t.meat,
+                    'Produce': t.produce,
+                    'Grains': t.grains
+                };
+                return map[cat] || cat;
+            };
+
+            useEffect(() => {
+                const ctx1 = document.getElementById('chart1');
+                if (!ctx1) return;
+
+                if (chart1Instance.current) {
+                    chart1Instance.current.destroy();
+                }
+
+                const colors = ['#4A90D9', '#00C9A7', '#FF6B6B', '#F1C40F', '#9B59B6', '#1ABC9C', '#E67E22', '#E84393'];
+
+                chart1Instance.current = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: barLabels,
+                        datasets: [{
+                            label: t.price,
+                            data: barPrices,
+                            backgroundColor: barLabels.map((_, i) => colors[i % colors.length]),
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        },
+                        onClick: function(e, elements) {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const itemName = barLabels[index];
+                                if (itemName) {
+                                    const englishName = getEnglishName(itemName);
+                                    for (const cat of FOOD_DATA.categories) {
+                                        const items = language === 'en' ? FOOD_DATA.items[cat] : FOOD_DATA.items_fr[cat];
+                                        if (items && items.includes(itemName)) {
+                                            setSelectedCategory(cat);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                return () => {
+                    if (chart1Instance.current) {
+                        chart1Instance.current.destroy();
+                    }
+                };
+            }, [selectedCategory, language, barLabels, barPrices]);
+
+            useEffect(() => {
+                const ctx2 = document.getElementById('chart2');
+                if (!ctx2) return;
+
+                if (chart2Instance.current) {
+                    chart2Instance.current.destroy();
+                }
+
+                chart2Instance.current = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: lineLabels,
+                        datasets: lineDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: {
+                                    font: { weight: '600', size: 10 },
+                                    boxWidth: 12,
+                                    padding: 8
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                return () => {
+                    if (chart2Instance.current) {
+                        chart2Instance.current.destroy();
+                    }
+                };
+            }, [selectedCategory, language, lineLabels, lineDatasets]);
+
+            return (
+                <div>
+                    <div className="dashboard-header">
+                        <div className="row align-items-center">
+                            <div className="col-md-8">
+                                <h1>{t.title}</h1>
+                                <p>{t.subtitle}</p>
+                                <span className="data-badge">{t.dataLabel}</span>
+                            </div>
+                            <div className="col-md-4 text-md-end mt-3 mt-md-0">
+                                <div className="lang-toggle justify-content-md-end">
+                                    <button className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')}>
+                                        {t.langEn}
+                                    </button>
+                                    <button className={language === 'fr' ? 'active' : ''} onClick={() => setLanguage('fr')}>
+                                        {t.langFr}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="chart-card">
+                        <div className="chart-header">
+                            <div>
+                                <div className="chart-title">{t.barTitle}</div>
+                                <div className="chart-subtitle">{t.barSubtitle}</div>
+                            </div>
+                            <div className="chart-controls">
+                                <select
+                                    value={selectedCategory}
+                                    onChange={(e) => {
+                                        const newCat = e.target.value;
+                                        setSelectedCategory(newCat);
+                                    }}
+                                >
+                                    {categoryOptions.map(cat => (
+                                        <option key={cat} value={cat}>
+                                            {getCategoryTranslation(cat)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        {barLabels.length > 0 ? (
+                            <div className="chart-wrapper">
+                                <canvas id="chart1"></canvas>
+                            </div>
+                        ) : (
+                            <p style={{ textAlign: 'center', color: '#888', padding: '40px 0' }}>{t.noData}</p>
+                        )}
+                        <p style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '12px', textAlign: 'center' }}>
+                        </p>
+                    </div>
+
+                    <div className="chart-card">
+                        <div className="chart-header">
+                            <div>
+                                <div className="chart-title">{t.lineTitle}</div>
+                                <div className="chart-subtitle">{t.lineSubtitle}</div>
+                            </div>
+                        </div>
+                        {lineDatasets.length > 0 && lineDatasets.some(d => d.data.length > 0) ? (
+                            <div className="chart-wrapper">
+                                <canvas id="chart2"></canvas>
+                            </div>
+                        ) : (
+                            <p style={{ textAlign: 'center', color: '#888', padding: '40px 0' }}>{t.noData}</p>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = document.getElementById('root');
+        if (root) {
+            ReactDOM.createRoot(root).render(<App />);
+        }
+    </script>
+</body>
+</html>
